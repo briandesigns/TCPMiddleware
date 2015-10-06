@@ -547,8 +547,11 @@ public class Client {
                         location = getString(arguments.elementAt(arguments.size()-3));
                         car = getBoolean(arguments.elementAt(arguments.size()-2));
                         room = getBoolean(arguments.elementAt(arguments.size()-1));
-
-                        toMW.println("reserveItinerary,"+id +","+customer+","+flightNumbers+","+location+","+car+","+room);
+                        String cmd = "reserveItinerary,"+"," +flightNumbers.size()+"," +id +","+customer+",";
+                        for (int i = 0; i < arguments.size()-6; i++) {
+                            cmd = cmd + arguments.elementAt(3+i)+",";
+                        }
+                        toMW.println(cmd+location+","+car+","+room);
                         if (fromMW.readLine().contains("true"))
                             System.out.println("Itinerary Reserved");
                         else
