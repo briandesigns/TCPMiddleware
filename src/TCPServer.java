@@ -1,24 +1,33 @@
 import java.io.*;
 import java.net.ServerSocket;
 import java.net.Socket;
-import java.net.URISyntaxException;
-import java.security.CodeSource;
-import java.util.HashMap;
-import java.util.Properties;
 
 /**
  * Created by brian on 05/10/15.
  * Class that can handle multiple tcp client connections
+ * Once listner picks up a client, it hands it off to a Connectionrunnable
  */
-public class TCPServer {
+public class TCPServer implements Runnable{
     int serverPort;
+    String serverType;
     ServerSocket serverSocket=null;
     boolean isStopped=false;
     Thread runningThread = null;
+    public static final String MIDDLEWARE = "MIDDLEWARE";
+    public static final String RESOURCE_MANAGER = "RESOURCE_MANAGER";
+    public static RMHashtable m_itemHT_customer = new RMHashtable();
+    public static RMHashtable m_itemHT_car = new RMHashtable();
+    public static RMHashtable m_itemHT_room = new RMHashtable();
+    public static RMHashtable m_itemHT_flight = new RMHashtable();
 
-    public TCPServer(int port) {
+
+
+
+    public TCPServer(int port, String serverType) {
         this.serverPort = port;
+        this.serverType = serverType;
     }
+
 
     public void run() {
         synchronized(this) {
@@ -26,20 +35,7 @@ public class TCPServer {
         }
         openServerSocket();
         System.out.println("TCPServer up and running");
-        while(! isStopped()) {
-            Socket clientSocket = null;
-            try {
-                clientSocket = this.serverSocket.accept();
-            } catch (IOException e) {
-                if(isStopped()) {
-                    System.out.println("server Stopped1");
-                    return;
-                }
-                throw new RuntimeException ("error accepting client connection", e);
-            }
-            new Thread(new ConnectionRunnable(clientSocket)).start();
-            System.out.println("A client connected");
-        }
+        listenForClient();
     }
 
     private synchronized boolean isStopped() {
@@ -55,6 +51,27 @@ public class TCPServer {
         }
     }
 
+    private void listenForClient() {
+        while(! isStopped()) {
+            Socket clientSocket = null;
+            try {
+                clientSocket = this.serverSocket.accept();
+            } catch (IOException e) {
+                if(isStopped()) {
+                    System.out.println("server Stopped1");
+                    return;
+                }
+                throw new RuntimeException ("error accepting client connection", e);
+            }
+            if (this.serverType.equals(MIDDLEWARE)) {
+                new Thread(new MiddlewareRunnable(clientSocket)).start();
+            } else {
+                new Thread(new ResourceManagerRunnable(clientSocket)).start();
+            }
+            System.out.println("A client connected");
+        }
+    }
+
     private void openServerSocket() {
         try {
             this.serverSocket = new ServerSocket(this.serverPort);
@@ -62,4 +79,11 @@ public class TCPServer {
             throw new RuntimeException("Cannot open port!", e);
         }
     }
+
+    public static void main(String[] args) {
+        TCPServer server = new TCPServer(Integer.parseInt(args[0]), args[1]);
+        new Thread(server).start();
+    }
 }
+
+

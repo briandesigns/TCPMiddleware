@@ -1,55 +1,113 @@
-import java.io.IOException;
-import java.net.Socket;
+
+
+
+import java.io.*;
+import java.net.*;
 import java.util.Calendar;
 import java.util.Enumeration;
+import java.util.Iterator;
 import java.util.Vector;
 
+
 /**
- * Created by brian on 05/10/15.
+ * Class that implements a client connection to the Middleware TCP server
  */
-public class Middleware extends TCPServer implements ResourceManager  {
+public class MiddlewareRunnable implements Runnable, ResourceManager {
+    Socket clientSocket = null;
+    Socket carSocket = null;
+    Socket flightSocket = null;
+    Socket roomSocket = null;
+    String[] rmAddresses;
+    PrintWriter toCar, toFlight, toRoom;
+    BufferedReader fromCar, fromFlight, fromRoom;
 
-    protected RMHashtable m_itemHT = new RMHashtable();
-    protected Socket flightRM;
-    protected Socket carRM;
-    protected Socket roomRM;
+    public MiddlewareRunnable(Socket clientSocket) {
+        this.clientSocket = clientSocket;
+        readRmAddresses();
+        connectRM();
+        setComms();
+    }
 
-    public Middleware(int serverPort,
-                      String flightHost, int flightPort,
-                      String carHost, int carPort,
-                      String roomHost, int roomPort) {
-
-        super(serverPort);
+    private void setComms() {
         try {
-            flightRM = new Socket(flightHost, flightPort);
-            carRM = new Socket(carHost, carPort);
-            roomRM = new Socket(roomHost, roomPort);
+            toCar = new PrintWriter(carSocket.getOutputStream(), true);
+            toFlight = new PrintWriter(flightSocket.getOutputStream(), true);
+            toRoom = new PrintWriter(roomSocket.getOutputStream(), true);
+            fromCar = new BufferedReader(new InputStreamReader(carSocket.getInputStream()));
+            fromFlight = new BufferedReader(new InputStreamReader(flightSocket.getInputStream()));
+            fromRoom = new BufferedReader(new InputStreamReader(flightSocket.getInputStream()));
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    private void connectRM() {
+        try {
+            this.flightSocket = new Socket(rmAddresses[0], Integer.parseInt(rmAddresses[1]));
+            this.carSocket = new Socket(rmAddresses[2], Integer.parseInt(rmAddresses[3]));
+            this.roomSocket = new Socket(rmAddresses[4], Integer.parseInt(rmAddresses[5]));
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    private void readRmAddresses() {
+        String line;
+        BufferedReader br = null;
+        try {
+            ClassLoader classLoader = getClass().getClassLoader();
+            File file = new File(classLoader.getResource("RMList.txt").getFile());
+            rmAddresses = new String[6];
+            br = new BufferedReader(new FileReader(file));
+
+            int i = 0;
+            while ((line = br.readLine()) != null) {
+                String[] tokens = line.split(" ");
+                rmAddresses[i]= tokens[0];
+                rmAddresses[i+1] = tokens[1];
+                i=i+2;
+            }
+        } catch (FileNotFoundException e) {
+            e.printStackTrace();
         } catch (IOException e) {
             e.printStackTrace();
         }
     }
 
 
+    public void run() {
+        try {
+            PrintWriter out = new PrintWriter(clientSocket.getOutputStream(), true);
+            BufferedReader in = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()));
+            String inputLine;
+            out.println("Tracer> ");
+        } catch (IOException e) {
+            System.out.println("exception IO");
+        }
+    }
+
+
+
     // Basic operations on RMItem //
 
     // Read a data item.
     private RMItem readData(int id, String key) {
-        synchronized(m_itemHT) {
-            return (RMItem) m_itemHT.get(key);
+        synchronized(TCPServer.m_itemHT_customer) {
+            return (RMItem) TCPServer.m_itemHT_customer.get(key);
         }
     }
 
     // Write a data item.
     private void writeData(int id, String key, RMItem value) {
-        synchronized(m_itemHT) {
-            m_itemHT.put(key, value);
+        synchronized(TCPServer.m_itemHT_customer) {
+            TCPServer.m_itemHT_customer.put(key, value);
         }
     }
 
     // Remove the item out of storage.
     protected RMItem removeData(int id, String key) {
-        synchronized(m_itemHT) {
-            return (RMItem) m_itemHT.remove(key);
+        synchronized(TCPServer.m_itemHT_customer) {
+            return (RMItem) TCPServer.m_itemHT_customer.remove(key);
         }
     }
 
@@ -105,7 +163,7 @@ public class Middleware extends TCPServer implements ResourceManager  {
 
     // Reserve an item.
     protected boolean reserveItem(int id, int customerId,
-                                  String key, String location) {
+                                  String key, String location) throws Exception {
         Trace.info("RM::reserveItem(" + id + ", " + customerId + ", "
                 + key + ", " + location + ") called.");
         // Read customer object if it exists (and read lock it).
@@ -115,25 +173,35 @@ public class Middleware extends TCPServer implements ResourceManager  {
                     + key + ", " + location + ") failed: customer doesn't exist.");
             return false;
         }
-
+        //Check for item availability and getting price
+        MWClient proxy;
+        boolean isSuccessfulReservation = false;
+        int itemPrice = -1;
+        if(key.contains("car-")) {
+            proxy = this.carClient;
+            isSuccessfulReservation = proxy.proxy.reserveCar(id, customerId, location);
+            itemPrice = proxy.proxy.queryCarsPrice(id, location);
+        } else if (key.contains("flight-")) {
+            proxy = this.flightClient;
+            isSuccessfulReservation = proxy.proxy.reserveFlight(id, customerId, Integer.parseInt(location));
+            itemPrice = proxy.proxy.queryFlightPrice(id, Integer.parseInt(location));
+        } else if (key.contains("room-")) {
+            proxy = this.roomClient;
+            isSuccessfulReservation = proxy.proxy.reserveRoom(id, customerId, location);
+            itemPrice = proxy.proxy.queryRoomsPrice(id, location);
+        } else {
+            throw new Exception("can't reserve this");
+        }
         // Check if the item is available.
-        ReservableItem item = (ReservableItem) readData(id, key);
-        if (item == null) {
+        if (!isSuccessfulReservation) {
             Trace.warn("RM::reserveItem(" + id + ", " + customerId + ", "
-                    + key + ", " + location + ") failed: item doesn't exist.");
-            return false;
-        } else if (item.getCount() == 0) {
-            Trace.warn("RM::reserveItem(" + id + ", " + customerId + ", "
-                    + key + ", " + location + ") failed: no more items.");
+                    + key + ", " + location + ") failed: item doesn't exist or no more items.");
             return false;
         } else {
             // Do reservation.
-            cust.reserve(key, location, item.getPrice());
-            writeData(id, cust.getKey(), cust);
 
-            // Decrease the number of available items in the storage.
-            item.setCount(item.getCount() - 1);
-            item.setReserved(item.getReserved() + 1);
+            cust.reserve(key, location, itemPrice);
+            writeData(id, cust.getKey(), cust);
 
             Trace.warn("RM::reserveItem(" + id + ", " + customerId + ", "
                     + key + ", " + location + ") OK.");
@@ -150,27 +218,53 @@ public class Middleware extends TCPServer implements ResourceManager  {
     @Override
     public boolean addFlight(int id, int flightNumber,
                              int numSeats, int flightPrice) {
-//        return flightClient.proxy.addFlight(id, flightNumber, numSeats, flightPrice);
-        return false;
+        toFlight.println("addFlight" + "," + id + "," + numSeats + "," + flightPrice);
+        String line = null;
+        try {
+            line = fromFlight.readLine();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        if (line.equalsIgnoreCase("true")) return true;
+        else return false;
     }
 
     @Override
     public boolean deleteFlight(int id, int flightNumber) {
-//        return flightClient.proxy.deleteLfight(id, flightNumber);
-        return false;
+        toFlight.println("deleteFlight" + "," + id + "," + flightNumber);
+        String line = null;
+        try {
+            line = fromFlight.readLine();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        if (line.equalsIgnoreCase("true")) return true;
+        else return false;
     }
 
     // Returns the number of empty seats on this flight.
     @Override
     public int queryFlight(int id, int flightNumber) {
-//        return flightClient.proxy.queryFlight(id, flightNumber);
-        return 0;
+        toFlight.println("queryFlight" + "," + id + "," + flightNumber);
+        String line = null;
+        try {
+            line = fromFlight.readLine();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        return Integer.parseInt(line);
     }
 
     // Returns price of this flight.
     public int queryFlightPrice(int id, int flightNumber) {
-//        return flightClient.proxy.queryFlightPrice(id, flightNumber);
-        return 0;
+        toFlight.println("queryFlightPrice" + "," + id + "," + flightNumber);
+        String line = null;
+        try {
+            line = fromFlight.readLine();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        return Integer.parseInt(line);
     }
 
     /*
@@ -217,29 +311,55 @@ public class Middleware extends TCPServer implements ResourceManager  {
     // its current price.
     @Override
     public boolean addCars(int id, String location, int numCars, int carPrice) {
-//        return carClient.proxy.addCars(id, location, numCars, carPrice);
-        return false;
+        toCar.println("addCars" + "," + id + "," + location + "," + numCars + "," + carPrice);
+        String line = null;
+        try {
+            line = fromCar.readLine();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        if (line.equalsIgnoreCase("true")) return true;
+        else return false;
     }
 
     // Delete cars from a location.
     @Override
     public boolean deleteCars(int id, String location) {
-//        return carClient.proxy.deleteCars(id, location);
-        return false;
+        toCar.println("deleteCars" + "," + id + "," + location);
+        String line = null;
+        try {
+            line = fromCar.readLine();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        if (line.equalsIgnoreCase("true")) return true;
+        else return false;
     }
 
     // Returns the number of cars available at a location.
     @Override
     public int queryCars(int id, String location) {
-//        return carClient.proxy.queryCars(id, location);
-        return 0;
+        toCar.println("queryCars" + "," + id + "," + location);
+        String line = null;
+        try {
+            line = fromCar.readLine();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        return Integer.parseInt(line);
     }
 
     // Returns price of cars at this location.
     @Override
     public int queryCarsPrice(int id, String location) {
-//        return carClient.proxy.queryCarsPrice(id, location);
-        return 0;
+        toCar.println("queryCarsPrice" + "," + id + "," + location);
+        String line = null;
+        try {
+            line = fromCar.readLine();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        return Integer.parseInt(line);
     }
 
 
@@ -250,29 +370,55 @@ public class Middleware extends TCPServer implements ResourceManager  {
     // its current price.
     @Override
     public boolean addRooms(int id, String location, int numRooms, int roomPrice) {
-//        return roomClient.proxy.addRooms(id, location, numRooms, roomPrice);
-        return false;
+        toRoom.println("addRooms" + "," + id + "," + location + "," + numRooms + "," + roomPrice);
+        String line = null;
+        try {
+            line = fromRoom.readLine();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        if (line.equalsIgnoreCase("true")) return true;
+        else return false;
     }
 
     // Delete rooms from a location.
     @Override
     public boolean deleteRooms(int id, String location) {
-//        return roomClient.proxy.deleteRooms(id, location);
-        return false;
+        toRoom.println("deleteRooms" + "," + id + "," + location);
+        String line = null;
+        try {
+            line = fromRoom.readLine();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        if (line.equalsIgnoreCase("true")) return true;
+        else return false;
     }
 
     // Returns the number of rooms available at a location.
     @Override
     public int queryRooms(int id, String location) {
-//        return roomClient.proxy.queryRooms(id, location);
-        return 0;
+        toRoom.println("queryRooms" + "," + id + "," + location);
+        String line = null;
+        try {
+            line = fromRoom.readLine();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        return Integer.parseInt(line);
     }
 
     // Returns room price at this location.
     @Override
     public int queryRoomsPrice(int id, String location) {
-//        return roomClient.proxy.queryRoomsPrice(id, location);
-        return 0;
+        toRoom.println("queryRoomsPrice" + "," + id + "," + location);
+        String line = null;
+        try {
+            line = fromRoom.readLine();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        return Integer.parseInt(line);
     }
 
 
@@ -379,20 +525,35 @@ public class Middleware extends TCPServer implements ResourceManager  {
     // Add flight reservation to this customer.
     @Override
     public boolean reserveFlight(int id, int customerId, int flightNumber) {
-        return reserveItem(id, customerId,
-                Flight.getKey(flightNumber), String.valueOf(flightNumber));
+        try {
+            return reserveItem(id, customerId,
+                    Flight.getKey(flightNumber), String.valueOf(flightNumber));
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return false;
     }
 
     // Add car reservation to this customer.
     @Override
     public boolean reserveCar(int id, int customerId, String location) {
-        return reserveItem(id, customerId, Car.getKey(location), location);
+        try {
+            return reserveItem(id, customerId, Car.getKey(location), location);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return false;
     }
 
     // Add room reservation to this customer.
     @Override
     public boolean reserveRoom(int id, int customerId, String location) {
-        return reserveItem(id, customerId, Room.getKey(location), location);
+        try {
+            return reserveItem(id, customerId, Room.getKey(location), location);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return false;
     }
 
 
@@ -400,7 +561,15 @@ public class Middleware extends TCPServer implements ResourceManager  {
     @Override
     public boolean reserveItinerary(int id, int customerId, Vector flightNumbers,
                                     String location, boolean car, boolean room) {
-        return false;
+        Iterator it = flightNumbers.iterator();
+
+        boolean isSuccessfulReservation = false;
+        while(it.hasNext()){
+            isSuccessfulReservation = reserveFlight(id, customerId, (Integer)it.next());
+        }
+        if(car) isSuccessfulReservation = reserveCar(id, customerId, location);
+        if(room) isSuccessfulReservation = reserveRoom(id, customerId, location);
+        return isSuccessfulReservation;
     }
 
 }
