@@ -174,21 +174,29 @@ public class MiddlewareRunnable implements Runnable, ResourceManager {
             return false;
         }
         //Check for item availability and getting price
-        MWClient proxy;
         boolean isSuccessfulReservation = false;
         int itemPrice = -1;
-        if(key.contains("car-")) {
-            proxy = this.carClient;
-            isSuccessfulReservation = proxy.proxy.reserveCar(id, customerId, location);
-            itemPrice = proxy.proxy.queryCarsPrice(id, location);
+        if (key.contains("car-")) {
+            toCar.println("reserveCar," + id + "," + customerId + "," + location);
+            if (fromCar.readLine().contains("true")) {
+                isSuccessfulReservation = true;
+                toCar.println("queryCarsPrice," + id + "," + location);
+                itemPrice = Integer.parseInt(fromCar.readLine());
+            }
         } else if (key.contains("flight-")) {
-            proxy = this.flightClient;
-            isSuccessfulReservation = proxy.proxy.reserveFlight(id, customerId, Integer.parseInt(location));
-            itemPrice = proxy.proxy.queryFlightPrice(id, Integer.parseInt(location));
+            toFlight.println("reserveFlight," + id + "," + customerId + "," + location);
+            if (fromFlight.readLine().contains("true")) {
+                isSuccessfulReservation = true;
+                toFlight.println("queryFlightPrice," + id + "," + location);
+                itemPrice = Integer.parseInt(fromFlight.readLine());
+            }
         } else if (key.contains("room-")) {
-            proxy = this.roomClient;
-            isSuccessfulReservation = proxy.proxy.reserveRoom(id, customerId, location);
-            itemPrice = proxy.proxy.queryRoomsPrice(id, location);
+            toRoom.println("reserveRoom," +id +"," +customerId+ "," + location);
+            if (fromRoom.readLine().contains("true")) {
+                isSuccessfulReservation = true;
+                toRoom.println("queryRoomsPrice,"+ id +"," + location);
+                itemPrice = Integer.parseInt(fromRoom.readLine());
+            }
         } else {
             throw new Exception("can't reserve this");
         }
