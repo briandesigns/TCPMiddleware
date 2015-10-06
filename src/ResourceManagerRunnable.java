@@ -46,22 +46,22 @@ public class ResourceManagerRunnable implements Runnable, ResourceManager {
 
     // Read a data item.
     private RMItem readData(int id, String key) {
-        synchronized (TCPServer.m_itemHT_customer) {
-            return (RMItem) TCPServer.m_itemHT_customer.get(key);
+        synchronized (hashTable) {
+            return (RMItem) hashTable.get(key);
         }
     }
 
     // Write a data item.
     private void writeData(int id, String key, RMItem value) {
-        synchronized (TCPServer.m_itemHT_customer) {
-            TCPServer.m_itemHT_customer.put(key, value);
+        synchronized (hashTable) {
+            hashTable.put(key, value);
         }
     }
 
     // Remove the item out of storage.
     protected RMItem removeData(int id, String key) {
-        synchronized (TCPServer.m_itemHT_customer) {
-            return (RMItem) TCPServer.m_itemHT_customer.remove(key);
+        synchronized (hashTable) {
+            return (RMItem) hashTable.remove(key);
         }
     }
 
