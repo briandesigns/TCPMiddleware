@@ -14,7 +14,10 @@ public class TCPServer implements Runnable{
     boolean isStopped=false;
     Thread runningThread = null;
     public static final String MIDDLEWARE = "MIDDLEWARE";
-    public static final String RESOURCE_MANAGER = "RESOURCE_MANAGER";
+    public static final String CAR_RM = "CAR_RM";
+    public static final String FLIGHT_RM = "FLIGHT_RM";
+    public static final String ROOM_RM = "ROOM_RM";
+
     public static RMHashtable m_itemHT_customer = new RMHashtable();
     public static RMHashtable m_itemHT_car = new RMHashtable();
     public static RMHashtable m_itemHT_room = new RMHashtable();
@@ -65,8 +68,12 @@ public class TCPServer implements Runnable{
             }
             if (this.serverType.equals(MIDDLEWARE)) {
                 new Thread(new MiddlewareRunnable(clientSocket)).start();
-            } else {
-                new Thread(new ResourceManagerRunnable(clientSocket)).start();
+            } else if(this.serverType.equals(CAR_RM)) {
+                new Thread(new ResourceManagerRunnable(clientSocket,CAR_RM)).start();
+            } else if (this.serverType.equals(FLIGHT_RM)) {
+                new Thread(new ResourceManagerRunnable(clientSocket,FLIGHT_RM)).start();
+            } else if (this.serverType.equals(ROOM_RM)) {
+                new Thread(new ResourceManagerRunnable(clientSocket,ROOM_RM)).start();
             }
             System.out.println("A client connected");
         }
