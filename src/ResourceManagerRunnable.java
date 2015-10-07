@@ -224,6 +224,15 @@ public class ResourceManagerRunnable implements Runnable, ResourceManager {
                             if (success) toClient.println("true");
                             else toClient.println("false");
                             break;
+                        case 23:
+                            if (cmdWords.length < 2) {
+                                toClient.println("ERROR : wrong arguments");
+                                break;
+                            }
+                            success = increaseReservableItemCount(Integer.parseInt(cmdWords[1]),cmdWords[2], Integer.parseInt(cmdWords[3]));
+                            if (success) toClient.println("true");
+                            else toClient.println("false");
+                            break;
                         default:
                             toClient.println("ERROR :  Command " + cmdWords[0] + " not supported");
                             break;
@@ -286,6 +295,8 @@ public class ResourceManagerRunnable implements Runnable, ResourceManager {
             choice= 21;
         else if (cmdWords[0].compareToIgnoreCase("newcustomerid") == 0)
             choice=22;
+        else if (cmdWords[0].compareToIgnoreCase("increasereservableitemcount") == 0)
+            choice=23;
         else
             choice=-1;
         return choice;
@@ -697,5 +708,20 @@ public class ResourceManagerRunnable implements Runnable, ResourceManager {
     public boolean reserveItinerary(int id, int customerId, Vector flightNumbers,
                                     String location, boolean car, boolean room) {
         return false;
+    }
+
+    @Override
+    public boolean increaseReservableItemCount(int id, String key, int count) {
+        ReservableItem item =
+                (ReservableItem) readData(id, key);
+        if (item==null) {
+            Trace.info("no such item, cannot increase count");
+            return false;
+        }
+        item.setReserved(item.getReserved() - count);
+        item.setCount(item.getCount() + count);
+        Trace.info("item reserved: " + item.getReserved() + "    item count: " + item.getCount());
+
+        return true;
     }
 }

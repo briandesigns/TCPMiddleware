@@ -741,13 +741,44 @@ public class MiddlewareRunnable implements Runnable, ResourceManager {
                 Trace.info("RM::deleteCustomer(" + id + ", " + customerId + "): "
                         + "deleting " + reservedItem.getCount() + " reservations "
                         + "for item " + reservedItem.getKey());
-                ReservableItem item =
-                        (ReservableItem) readData(id, reservedItem.getKey());
-                item.setReserved(item.getReserved() - reservedItem.getCount());
-                item.setCount(item.getCount() + reservedItem.getCount());
-                Trace.info("RM::deleteCustomer(" + id + ", " + customerId + "): "
-                        + reservedItem.getKey() + " reserved/available = "
-                        + item.getReserved() + "/" + item.getCount());
+                if(reservedItem.getKey().contains("flight-")) {
+                    toFlight.println("increaseReservableItemCount," + id + "," + reservedItem.getKey() + "," + reservedItem.getCount());
+                    try {
+                        String line = fromFlight.readLine();
+                        if (line.contains("true")) {
+                            Trace.info("reserved item increased");
+                        } else
+                            Trace.info("reserved item count cannot be increased");
+                    } catch (IOException e1) {
+                        e1.printStackTrace();
+                    }
+                } else if (reservedItem.getKey().contains("car-")) {
+                    toCar.println("increaseReservableItemCount," + id + "," + reservedItem.getKey() + "," + reservedItem.getCount());
+                    try {
+                        String line = fromCar.readLine();
+                        if (line.contains("true")) {
+                            Trace.info("reserved item increased");
+                        } else
+                            Trace.info("reserved item count cannot be increased");
+                    } catch (IOException e1) {
+                        e1.printStackTrace();
+                    }
+
+                } else if (reservedItem.getKey().contains("room")) {
+                    toRoom.println("increaseReservableItemCount," + id + "," + reservedItem.getKey() + "," + reservedItem.getCount());
+                    try {
+                        String line = fromRoom.readLine();
+                        if (line.contains("true")) {
+                            Trace.info("reserved item increased");
+                        } else
+                            Trace.info("reserved item count cannot be increased");
+                    } catch (IOException e1) {
+                        e1.printStackTrace();
+                    }
+
+                } else {
+                    Trace.info("reserved item does not exist");
+                }
             }
             // Remove the customer from the storage.
             removeData(id, cust.getKey());
@@ -833,11 +864,29 @@ public class MiddlewareRunnable implements Runnable, ResourceManager {
 
         boolean isSuccessfulReservation = false;
         while (it.hasNext()) {
-            isSuccessfulReservation = reserveFlight(id, customerId, (Integer) it.next());
+            try {
+                isSuccessfulReservation = reserveFlight(id, customerId, getInt(it.next()));
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
         }
         if (car) isSuccessfulReservation = reserveCar(id, customerId, location);
         if (room) isSuccessfulReservation = reserveRoom(id, customerId, location);
         return isSuccessfulReservation;
+    }
+
+    @Override
+    public boolean increaseReservableItemCount(int id, String key, int count) {
+        return false;
+    }
+
+    public int getInt(Object temp) throws Exception {
+        try {
+            return (new Integer((String)temp)).intValue();
+        }
+        catch(Exception e) {
+            throw e;
+        }
     }
 
 }

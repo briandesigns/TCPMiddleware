@@ -15,6 +15,7 @@
  */
 
 
+import javax.jws.WebMethod;
 import java.util.*;
 
 
@@ -114,5 +115,7 @@ public interface ResourceManager {
     /* Reserve an itinerary. */
     public boolean reserveItinerary(int id, int customerId, Vector flightNumbers,
                                     String location, boolean car, boolean room);
+
+    public boolean increaseReservableItemCount(int id, String key, int count);
 
 }
