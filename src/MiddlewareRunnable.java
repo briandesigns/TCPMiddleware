@@ -17,13 +17,11 @@ public class MiddlewareRunnable implements Runnable, ResourceManager {
     Socket carSocket = null;
     Socket flightSocket = null;
     Socket roomSocket = null;
-    String[] rmAddresses;
     PrintWriter toCar, toFlight, toRoom, toClient;
     BufferedReader fromCar, fromFlight, fromRoom, fromClient;
 
     public MiddlewareRunnable(Socket clientSocket) {
         this.clientSocket = clientSocket;
-        readRmAddresses();
         connectRM();
         setComms();
     }
@@ -37,63 +35,37 @@ public class MiddlewareRunnable implements Runnable, ResourceManager {
             fromClient = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()));
             fromCar = new BufferedReader(new InputStreamReader(carSocket.getInputStream()));
             fromFlight = new BufferedReader(new InputStreamReader(flightSocket.getInputStream()));
-            fromRoom = new BufferedReader(new InputStreamReader(flightSocket.getInputStream()));
+            fromRoom = new BufferedReader(new InputStreamReader(roomSocket.getInputStream()));
         } catch (IOException e) {
-            e.printStackTrace();
+            Trace.info("Cannot establish comms with an end-user client or with one of the RMs");
         }
     }
 
     private void connectRM() {
         try {
-            this.flightSocket = new Socket(rmAddresses[0], Integer.parseInt(rmAddresses[1]));
-            this.carSocket = new Socket(rmAddresses[2], Integer.parseInt(rmAddresses[3]));
-            this.roomSocket = new Socket(rmAddresses[4], Integer.parseInt(rmAddresses[5]));
+            this.flightSocket = new Socket(TCPServer.rmAddresses[0], Integer.parseInt(TCPServer.rmAddresses[1]));
+            this.carSocket = new Socket(TCPServer.rmAddresses[2], Integer.parseInt(TCPServer.rmAddresses[3]));
+            this.roomSocket = new Socket(TCPServer.rmAddresses[4], Integer.parseInt(TCPServer.rmAddresses[5]));
         } catch (IOException e) {
-            e.printStackTrace();
+            Trace.info("Cannot connect to all 3 mandatory RMs");
         }
     }
 
-    private void readRmAddresses() {
-        String line;
-        BufferedReader br = null;
-        try {
-            ClassLoader classLoader = getClass().getClassLoader();
-            File file = new File(classLoader.getResource("RMList.txt").getFile());
-            rmAddresses = new String[6];
-            br = new BufferedReader(new FileReader(file));
-
-            int i = 0;
-            while ((line = br.readLine()) != null) {
-                String[] tokens = line.split(" ");
-                rmAddresses[i] = tokens[0];
-                rmAddresses[i + 1] = tokens[1];
-                i = i + 2;
-            }
-        } catch (FileNotFoundException e) {
-            e.printStackTrace();
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-    }
 
 
     public void run() {
         try {
-
             String inputLine;
-            toClient.println("Middleware> ");
 
             //keep on prompting user for input until disconnect
             outerloop:
             while ((inputLine = fromClient.readLine()) != null) {
-                //read a line from user if we used the scanner instaed
-                //inputLine = in.nextLine();
-
+                Trace.info("command from client: " + inputLine);
                 //split the line into tokens and save them into an array
                 String[] cmdWords = inputLine.split(",");
-
                 int choice = findChoice(cmdWords);
-
+                Trace.info("command tokens amount: " + cmdWords.length);
+                Trace.info("choice number based on command: " + choice);
                 boolean success;
                 int value;
                 String stringValue;
@@ -105,7 +77,13 @@ public class MiddlewareRunnable implements Runnable, ResourceManager {
                             break;
                         }
                         success = addFlight(Integer.parseInt(cmdWords[1]), Integer.parseInt(cmdWords[2]), Integer.parseInt(cmdWords[3]), Integer.parseInt(cmdWords[4]));
-                        toClient.println(success);
+                        if (success) {
+                            toClient.println("true");
+                            Trace.info("RM addFlight successful");
+                        } else {
+                            toClient.println("false");
+                            Trace.info("RM addFlight failed");
+                        }
                         break;
                     case 3:
                         if(cmdWords.length<4) {
@@ -113,7 +91,8 @@ public class MiddlewareRunnable implements Runnable, ResourceManager {
                             break;
                         }
                         success = addCars(Integer.parseInt(cmdWords[1]), cmdWords[2], Integer.parseInt(cmdWords[3]), Integer.parseInt(cmdWords[4]));
-                        toClient.println(success);
+                        if (success) toClient.println("true");
+                        else toClient.println("false");
                         break;
                     case 4:
                         if(cmdWords.length<4) {
@@ -121,7 +100,13 @@ public class MiddlewareRunnable implements Runnable, ResourceManager {
                             break;
                         }
                         success = addRooms(Integer.parseInt(cmdWords[1]), cmdWords[2], Integer.parseInt(cmdWords[3]), Integer.parseInt(cmdWords[4]));
-                        toClient.println(success);
+                        if (success) {
+                            toClient.println("true");
+                        }
+                        else {
+
+                            toClient.println("false");
+                        }
                         break;
                     case 5:
                         if(cmdWords.length<1) {
@@ -137,7 +122,9 @@ public class MiddlewareRunnable implements Runnable, ResourceManager {
                             break;
                         }
                         success = deleteFlight(Integer.parseInt(cmdWords[1]), Integer.parseInt(cmdWords[2]));
-                        toClient.println(success);
+                        if (success) toClient.println("true");
+                        else toClient.println("false");
+
                         break;
                     case 7:
                         if(cmdWords.length<2) {
@@ -145,7 +132,9 @@ public class MiddlewareRunnable implements Runnable, ResourceManager {
                             break;
                         }
                         success = deleteCars(Integer.parseInt(cmdWords[1]), cmdWords[2]);
-                        toClient.println(success);
+                        if (success) toClient.println("true");
+                        else toClient.println("false");
+
                         break;
                     case 8:
                         if(cmdWords.length<2) {
@@ -153,7 +142,9 @@ public class MiddlewareRunnable implements Runnable, ResourceManager {
                             break;
                         }
                         success = deleteRooms(Integer.parseInt(cmdWords[1]), cmdWords[2]);
-                        toClient.println(success);
+                        if (success) toClient.println("true");
+                        else toClient.println("false");
+
                         break;
                     case 9:
                         if(cmdWords.length<2) {
@@ -161,7 +152,8 @@ public class MiddlewareRunnable implements Runnable, ResourceManager {
                             break;
                         }
                         success = deleteCustomer(Integer.parseInt(cmdWords[1]), Integer.parseInt(cmdWords[2]));
-                        toClient.println(success);
+                        if (success) toClient.println("true");
+                        else toClient.println("false");
                         break;
                     case 10:
                         if(cmdWords.length<2) {
@@ -224,8 +216,12 @@ public class MiddlewareRunnable implements Runnable, ResourceManager {
                             toClient.println("ERROR : wrong arguments");
                             break;
                         }
+                        System.out.println(Integer.parseInt(cmdWords[2]));
+                        System.out.println(Integer.parseInt(cmdWords[3]));
+
                         success = reserveFlight(Integer.parseInt(cmdWords[1]), Integer.parseInt(cmdWords[2]), Integer.parseInt(cmdWords[3]));
-                        toClient.println(success);
+                        if (success) toClient.println("true");
+                        else toClient.println("false");
                         break;
                     case 18:
                         if(cmdWords.length<3) {
@@ -233,7 +229,8 @@ public class MiddlewareRunnable implements Runnable, ResourceManager {
                             break;
                         }
                         success = reserveCar(Integer.parseInt(cmdWords[1]), Integer.parseInt(cmdWords[2]), cmdWords[3]);
-                        toClient.println(success);
+                        if (success) toClient.println("true");
+                        else toClient.println("false");
                         break;
                     case 19:
                         if(cmdWords.length<3) {
@@ -241,7 +238,8 @@ public class MiddlewareRunnable implements Runnable, ResourceManager {
                             break;
                         }
                         success = reserveRoom(Integer.parseInt(cmdWords[1]), Integer.parseInt(cmdWords[2]), cmdWords[3]);
-                        toClient.println(success);
+                        if (success) toClient.println("true");
+                        else toClient.println("false");
                         break;
                     case 20:
                         int numFlights = Integer.parseInt(cmdWords[1]);
@@ -249,19 +247,16 @@ public class MiddlewareRunnable implements Runnable, ResourceManager {
                         int customerId = Integer.parseInt(cmdWords[3]);
                         Vector flightNumbers = new Vector();
                         for (int i = 0; i<numFlights; i++) {
-                            flightNumbers.addElement(cmdWords[i+4]);
+                            flightNumbers.addElement(Integer.parseInt(cmdWords[i+4]));
                         }
                         String location = cmdWords[3 + numFlights + 1];
                         boolean car = cmdWords[3+numFlights+2].contains("true");
                         boolean room = cmdWords[3 + numFlights + 3].contains("true");
-                        reserveItinerary(id,customerId,flightNumbers,location,car,room);
+                        success = reserveItinerary(id, customerId, flightNumbers, location, car, room);
+                        if(success) toClient.println("true");
+                        else toClient.println("false");
                         break;
-                    case -1:
-                        toClient.println("ERROR :  Command " + cmdWords[0] + " not supported");
-                        break;
-                    
                     case 21:
-                        System.exit(0);
                         break outerloop;
                     case 22:
                         if(cmdWords.length<2) {
@@ -275,9 +270,11 @@ public class MiddlewareRunnable implements Runnable, ResourceManager {
                         toClient.println("ERROR :  Command " + cmdWords[0] + " not supported");
                         break;
                 }
-                toClient.println("Middleware> ");
             }
-
+            toCar.println("END");
+            toRoom.println("END");
+            toFlight.println("EnD");
+            Trace.info("an end-user client disconnected");
             fromClient.close();
             fromCar.close();
             fromRoom.close();
@@ -296,35 +293,35 @@ public class MiddlewareRunnable implements Runnable, ResourceManager {
 
         if (cmdWords[0].compareToIgnoreCase("help") == 0)
             choice = 1;
-        else if (cmdWords[0].compareToIgnoreCase("newflight") == 0)
+        else if (cmdWords[0].compareToIgnoreCase("addflight") == 0)
             choice =2;
-        else if (cmdWords[0].compareToIgnoreCase("newcar") == 0)
+        else if (cmdWords[0].compareToIgnoreCase("addcars") == 0)
             choice =3;
-        else if (cmdWords[0].compareToIgnoreCase("newroom") == 0)
+        else if (cmdWords[0].compareToIgnoreCase("addrooms") == 0)
             choice =4;
         else if (cmdWords[0].compareToIgnoreCase("newcustomer") == 0)
             choice =5;
         else if (cmdWords[0].compareToIgnoreCase("deleteflight") == 0)
             choice =6;
-        else if (cmdWords[0].compareToIgnoreCase("deletecar") == 0)
+        else if (cmdWords[0].compareToIgnoreCase("deletecars") == 0)
             choice =7;
-        else if (cmdWords[0].compareToIgnoreCase("deleteroom") == 0)
+        else if (cmdWords[0].compareToIgnoreCase("deleterooms") == 0)
             choice=8;
         else if (cmdWords[0].compareToIgnoreCase("deletecustomer") == 0)
             choice=9;
         else if (cmdWords[0].compareToIgnoreCase("queryflight") == 0)
             choice=10;
-        else if (cmdWords[0].compareToIgnoreCase("querycar") == 0)
+        else if (cmdWords[0].compareToIgnoreCase("querycars") == 0)
             choice= 11;
-        else if (cmdWords[0].compareToIgnoreCase("queryroom") == 0)
+        else if (cmdWords[0].compareToIgnoreCase("queryrooms") == 0)
             choice= 12;
-        else if (cmdWords[0].compareToIgnoreCase("querycustomer") == 0)
+        else if (cmdWords[0].compareToIgnoreCase("querycustomerinfo") == 0)
             choice= 13;
         else if (cmdWords[0].compareToIgnoreCase("queryflightprice") == 0)
             choice= 14;
-        else if (cmdWords[0].compareToIgnoreCase("querycarprice") == 0)
+        else if (cmdWords[0].compareToIgnoreCase("querycarsprice") == 0)
             choice= 15;
-        else if (cmdWords[0].compareToIgnoreCase("queryroomprice") == 0)
+        else if (cmdWords[0].compareToIgnoreCase("queryroomsprice") == 0)
             choice= 16;
         else if (cmdWords[0].compareToIgnoreCase("reserveflight") == 0)
             choice= 17;
@@ -332,9 +329,9 @@ public class MiddlewareRunnable implements Runnable, ResourceManager {
             choice= 18;
         else if (cmdWords[0].compareToIgnoreCase("reserveroom") == 0)
             choice= 19;
-        else if (cmdWords[0].compareToIgnoreCase("itinerary") == 0)
+        else if (cmdWords[0].compareToIgnoreCase("reserveitinerary") == 0)
             choice= 20;
-        else if (cmdWords[0].compareToIgnoreCase("quit") == 0)
+        else if (cmdWords[0].compareToIgnoreCase("END") == 0)
             choice= 21;
         else if (cmdWords[0].compareToIgnoreCase("newcustomerid") == 0)
             choice=22;
@@ -406,13 +403,13 @@ public class MiddlewareRunnable implements Runnable, ResourceManager {
 
     // Query the price of an item.
     protected int queryPrice(int id, String key) {
-        Trace.info("RM::queryCarsPrice(" + id + ", " + key + ") called.");
+        Trace.info("RM::queryPrice(" + id + ", " + key + ") called.");
         ReservableItem curObj = (ReservableItem) readData(id, key);
         int value = 0;
         if (curObj != null) {
             value = curObj.getPrice();
         }
-        Trace.info("RM::queryCarsPrice(" + id + ", " + key + ") OK: $" + value);
+        Trace.info("RM::queryPrice(" + id + ", " + key + ") OK: $" + value);
         return value;
     }
 
@@ -432,6 +429,7 @@ public class MiddlewareRunnable implements Runnable, ResourceManager {
         boolean isSuccessfulReservation = false;
         int itemPrice = -1;
         if (key.contains("car-")) {
+            Trace.info("got here");
             toCar.println("reserveCar," + id + "," + customerId + "," + location);
             if (fromCar.readLine().contains("true")) {
                 isSuccessfulReservation = true;
@@ -481,15 +479,20 @@ public class MiddlewareRunnable implements Runnable, ResourceManager {
     @Override
     public boolean addFlight(int id, int flightNumber,
                              int numSeats, int flightPrice) {
-        toFlight.println("addFlight" + "," + id + "," + numSeats + "," + flightPrice);
+        toFlight.println("addFlight" + "," + id + "," + +flightNumber + "," + numSeats + "," + flightPrice);
         String line = null;
         try {
             line = fromFlight.readLine();
         } catch (IOException e) {
             e.printStackTrace();
         }
-        if (line.equalsIgnoreCase("true")) return true;
-        else return false;
+        if (line.equalsIgnoreCase("true")) {
+            Trace.info(line);
+            return true;
+        } else {
+            Trace.info(line);
+            return false;
+        }
     }
 
     @Override
@@ -585,9 +588,11 @@ public class MiddlewareRunnable implements Runnable, ResourceManager {
         else return false;
     }
 
+    //todo: reserveitineray doesnt work
     // Delete cars from a location.
     @Override
     public boolean deleteCars(int id, String location) {
+
         toCar.println("deleteCars" + "," + id + "," + location);
         String line = null;
         try {

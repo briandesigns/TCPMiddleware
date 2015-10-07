@@ -23,12 +23,42 @@ public class TCPServer implements Runnable{
     public static RMHashtable m_itemHT_room = new RMHashtable();
     public static RMHashtable m_itemHT_flight = new RMHashtable();
 
+    public static String[] rmAddresses;
+
 
 
 
     public TCPServer(int port, String serverType) {
         this.serverPort = port;
         this.serverType = serverType;
+        if(serverType.equals(MIDDLEWARE)) readRMAddresses();
+    }
+
+    private void readRMAddresses() {
+        String line;
+        BufferedReader br = null;
+        try {
+            String path = TCPServer.class.getProtectionDomain().getCodeSource().getLocation().getPath();
+            path = new File(path).getParent();
+            path = path + "/RMList.txt";
+            File file = new File(path);
+            rmAddresses = new String[6];
+            br = new BufferedReader(new FileReader(file));
+
+            int i = 0;
+            while ((line = br.readLine()) != null) {
+                String[] tokens = line.split(" ");
+                rmAddresses[i] = tokens[0];
+                rmAddresses[i + 1] = tokens[1];
+                i = i + 2;
+            }
+            Trace.info("List of Active RM's successfully loaded");
+        } catch (FileNotFoundException e) {
+            e.printStackTrace();
+            Trace.info("Cannot find RMList.txt");
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
 
 
@@ -37,7 +67,7 @@ public class TCPServer implements Runnable{
             this.runningThread = Thread.currentThread();
         }
         openServerSocket();
-        System.out.println("TCPServer up and running");
+        Trace.info(this.serverType+ " TCPServer running on port " + this.serverPort);
         listenForClient();
     }
 
@@ -75,7 +105,10 @@ public class TCPServer implements Runnable{
             } else if (this.serverType.equals(ROOM_RM)) {
                 new Thread(new ResourceManagerRunnable(clientSocket,ROOM_RM)).start();
             }
-            System.out.println("A client connected");
+            if(this.serverType.equals(MIDDLEWARE))
+                Trace.info("An end-user client connected");
+            else
+                Trace.info("A Middleware client thread connected");
         }
     }
 

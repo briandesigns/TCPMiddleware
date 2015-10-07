@@ -82,7 +82,11 @@ public class Client {
             }
             //remove heading and trailing white space
             command = command.trim();
+
+            if(command.equals("")) continue;
             arguments = parse(command);
+
+
 
             //decide which of the commands this was
             switch(findChoice((String) arguments.elementAt(0))) {
@@ -112,15 +116,14 @@ public class Client {
                         numSeats = getInt(arguments.elementAt(3));
                         flightPrice = getInt(arguments.elementAt(4));
 
-                        toMW.println("addFlight," +id + "," + flightNumber + "," + numSeats + "," + flightPrice);
-                        if (fromMW.readLine().contains("true"))
-                            System.out.println("Flight added");
+                        toMW.println("addFlight," + id + "," + flightNumber + "," + numSeats + "," + flightPrice);
+                        String line = fromMW.readLine();
+                        if (line.contains("true"))
+                            Trace.info("MW addFlight successful");
                         else
-                            System.out.println("Flight could not be added");
+                            Trace.info("MW addFlight failed");
                     }
                     catch(Exception e) {
-                        System.out.println("EXCEPTION: ");
-                        System.out.println(e.getMessage());
                         e.printStackTrace();
                     }
                     break;
@@ -139,16 +142,13 @@ public class Client {
                         location = getString(arguments.elementAt(2));
                         numCars = getInt(arguments.elementAt(3));
                         price = getInt(arguments.elementAt(4));
-
                         toMW.println("addCars," +id + "," + location + "," + numCars + "," + price);
                         if (fromMW.readLine().contains("true"))
-                            System.out.println("cars added");
+                            Trace.info("MW addCars successful");
                         else
-                            System.out.println("cars could not be added");
+                            Trace.info("MW addCars failed");
                     }
                     catch(Exception e) {
-                        System.out.println("EXCEPTION: ");
-                        System.out.println(e.getMessage());
                         e.printStackTrace();
                     }
                     break;
@@ -170,13 +170,11 @@ public class Client {
 
                         toMW.println("addRooms," +id + "," + location + "," + numRooms + "," + price);
                         if (fromMW.readLine().contains("true"))
-                            System.out.println("rooms added");
+                            Trace.info("MW addRooms successful");
                         else
-                            System.out.println("rooms could not be added");
+                            Trace.info("MW addRooms failed");
                     }
                     catch(Exception e) {
-                        System.out.println("EXCEPTION: ");
-                        System.out.println(e.getMessage());
                         e.printStackTrace();
                     }
                     break;
@@ -191,11 +189,10 @@ public class Client {
                         id = getInt(arguments.elementAt(1));
                         toMW.println("newCustomer,"+id);
                         int customer = Integer.parseInt(fromMW.readLine());
-                        System.out.println("new customer id: " + customer);
+                        Trace.info("new customer id: " + customer);
+                        Trace.info("MW newCustomer successful");
                     }
                     catch(Exception e) {
-                        System.out.println("EXCEPTION: ");
-                        System.out.println(e.getMessage());
                         e.printStackTrace();
                     }
                     break;
@@ -213,9 +210,9 @@ public class Client {
 
                         toMW.println("deleteFlight," + id + "," + flightNumber);
                         if (fromMW.readLine().contains("true"))
-                            System.out.println("Flight Deleted");
+                            Trace.info("MW deleteFlight successful");
                         else
-                            System.out.println("Flight could not be deleted");
+                            Trace.info("MW deleteFlight failed");
                     }
                     catch(Exception e) {
                         System.out.println("EXCEPTION: ");
@@ -237,14 +234,11 @@ public class Client {
 
                         toMW.println("deleteCars," + id + "," + location);
                         if (fromMW.readLine().contains("true"))
-                            System.out.println("cars Deleted");
+                            Trace.info("MW deleteCars successful");
                         else
-                            System.out.println("cars could not be deleted");
-
+                            Trace.info("cars could not be deleted");
                     }
                     catch(Exception e) {
-                        System.out.println("EXCEPTION: ");
-                        System.out.println(e.getMessage());
                         e.printStackTrace();
                     }
                     break;
@@ -262,13 +256,11 @@ public class Client {
 
                         toMW.println("deleteRooms," + id + "," + location);
                         if (fromMW.readLine().contains("true"))
-                            System.out.println("rooms Deleted");
+                            Trace.info("MW deleteRooms successful");
                         else
-                            System.out.println("rooms could not be deleted");
+                            Trace.info("MW deleteRooms failed");
                     }
                     catch(Exception e) {
-                        System.out.println("EXCEPTION: ");
-                        System.out.println(e.getMessage());
                         e.printStackTrace();
                     }
                     break;
@@ -286,13 +278,11 @@ public class Client {
 
                         toMW.println("deleteCustomer," + id + "," + customer);
                         if (fromMW.readLine().contains("true"))
-                            System.out.println("Customer Deleted");
+                            Trace.info("MW deleteCustomer successful");
                         else
-                            System.out.println("Customer could not be deleted");
+                            Trace.info("MW deleteCustomer failed");
                     }
                     catch(Exception e) {
-                        System.out.println("EXCEPTION: ");
-                        System.out.println(e.getMessage());
                         e.printStackTrace();
                     }
                     break;
@@ -308,13 +298,10 @@ public class Client {
                         id = getInt(arguments.elementAt(1));
                         flightNumber = getInt(arguments.elementAt(2));
                         toMW.println("queryFlight," + id +"," +flightNumber);
-
                         int seats = Integer.parseInt(fromMW.readLine());
-                        System.out.println("Number of seats available: " + seats);
+                        Trace.info("MW Number of seats available: " + seats);
                     }
                     catch(Exception e) {
-                        System.out.println("EXCEPTION: ");
-                        System.out.println(e.getMessage());
                         e.printStackTrace();
                     }
                     break;
@@ -332,11 +319,9 @@ public class Client {
                         toMW.println("queryCars," + id +"," +location);
 
                         numCars = Integer.parseInt(fromMW.readLine());
-                        System.out.println("number of cars at this location: " + numCars);
+                        Trace.info("MW number of cars at this location: " + numCars);
                     }
                     catch(Exception e) {
-                        System.out.println("EXCEPTION: ");
-                        System.out.println(e.getMessage());
                         e.printStackTrace();
                     }
                     break;
@@ -352,13 +337,10 @@ public class Client {
                         id = getInt(arguments.elementAt(1));
                         location = getString(arguments.elementAt(2));
                         toMW.println("queryRooms," + id +"," +location);
-
                         numRooms= Integer.parseInt(fromMW.readLine());
-                        System.out.println("number of rooms at this location: " + numRooms);
+                        Trace.info("MW number of rooms at this location: " + numRooms);
                     }
                     catch(Exception e) {
-                        System.out.println("EXCEPTION: ");
-                        System.out.println(e.getMessage());
                         e.printStackTrace();
                     }
                     break;
@@ -376,11 +358,9 @@ public class Client {
 
                         toMW.println("queryCustomerInfo," +id +","+ customer);
                         String bill = fromMW.readLine();
-                        System.out.println("Customer info: " + bill);
+                        Trace.info("MW Customer info: " + bill);
                     }
                     catch(Exception e) {
-                        System.out.println("EXCEPTION: ");
-                        System.out.println(e.getMessage());
                         e.printStackTrace();
                     }
                     break;
@@ -396,13 +376,10 @@ public class Client {
                         id = getInt(arguments.elementAt(1));
                         flightNumber = getInt(arguments.elementAt(2));
                         toMW.println("queryFlightPrice," +id+","+flightNumber);
-
                         price = Integer.parseInt(fromMW.readLine());
-                        System.out.println("Price of a seat: " + price);
+                        Trace.info("MW Price of a seat: " + price);
                     }
                     catch(Exception e) {
-                        System.out.println("EXCEPTION: ");
-                        System.out.println(e.getMessage());
                         e.printStackTrace();
                     }
                     break;
@@ -417,14 +394,11 @@ public class Client {
                     try {
                         id = getInt(arguments.elementAt(1));
                         location = getString(arguments.elementAt(2));
-                        toMW.println("queryFlightPrice," +id+","+location);
-
+                        toMW.println("queryCarsPrice," +id+","+location);
                         price = Integer.parseInt(fromMW.readLine());
-                        System.out.println("Price of a car at this location: " + price);
+                        Trace.info("MW Price of a car at this location: " + price);
                     }
                     catch(Exception e) {
-                        System.out.println("EXCEPTION: ");
-                        System.out.println(e.getMessage());
                         e.printStackTrace();
                     }
                     break;
@@ -439,14 +413,12 @@ public class Client {
                     try {
                         id = getInt(arguments.elementAt(1));
                         location = getString(arguments.elementAt(2));
-                        toMW.println("queryFlightPrice," +id+","+location);
+                        toMW.println("queryRoomsPrice," +id+","+location);
 
                         price = Integer.parseInt(fromMW.readLine());
-                        System.out.println("Price of rooms at this location: " + price);
+                        Trace.info("MW Price of rooms at this location: " + price);
                     }
                     catch(Exception e) {
-                        System.out.println("EXCEPTION: ");
-                        System.out.println(e.getMessage());
                         e.printStackTrace();
                     }
                     break;
@@ -463,15 +435,13 @@ public class Client {
                         id = getInt(arguments.elementAt(1));
                         int customer = getInt(arguments.elementAt(2));
                         flightNumber = getInt(arguments.elementAt(3));
-                        toMW.println("reserveFlight," +id +","+flightNumber);
+                        toMW.println("reserveFlight," +id +"," + customer + "," + flightNumber);
                         if (fromMW.readLine().contains("true"))
-                            System.out.println("Flight Reserved");
+                            Trace.info("MW reserveFlight successful");
                         else
-                            System.out.println("Flight could not be reserved.");
+                            Trace.info("MW reserveFlight failed");
                     }
                     catch(Exception e) {
-                        System.out.println("EXCEPTION: ");
-                        System.out.println(e.getMessage());
                         e.printStackTrace();
                     }
                     break;
@@ -490,13 +460,11 @@ public class Client {
                         location = getString(arguments.elementAt(3));
                         toMW.println("reserveCar," +id +","+customer+","+location);
                         if (fromMW.readLine().contains("true"))
-                            System.out.println("car Reserved");
+                            Trace.info("MW reserveCar successful");
                         else
-                            System.out.println("car could not be reserved.");
+                            Trace.info("MW reserveCar failed");
                     }
                     catch(Exception e) {
-                        System.out.println("EXCEPTION: ");
-                        System.out.println(e.getMessage());
                         e.printStackTrace();
                     }
                     break;
@@ -515,13 +483,11 @@ public class Client {
                         location = getString(arguments.elementAt(3));
                         toMW.println("reserveRoom," +id +","+customer+","+location);
                         if (fromMW.readLine().contains("true"))
-                            System.out.println("room Reserved");
+                            Trace.info("MW reserveRoom successful");
                         else
-                            System.out.println("room could not be reserved.");
+                            Trace.info("MW reserveRoom failed");
                     }
                     catch(Exception e) {
-                        System.out.println("EXCEPTION: ");
-                        System.out.println(e.getMessage());
                         e.printStackTrace();
                     }
                     break;
@@ -547,19 +513,17 @@ public class Client {
                         location = getString(arguments.elementAt(arguments.size()-3));
                         car = getBoolean(arguments.elementAt(arguments.size()-2));
                         room = getBoolean(arguments.elementAt(arguments.size()-1));
-                        String cmd = "reserveItinerary,"+"," +flightNumbers.size()+"," +id +","+customer+",";
+                        String cmd = "reserveItinerary"+"," +flightNumbers.size()+"," +id +","+customer+",";
                         for (int i = 0; i < arguments.size()-6; i++) {
                             cmd = cmd + arguments.elementAt(3+i)+",";
                         }
                         toMW.println(cmd+location+","+car+","+room);
                         if (fromMW.readLine().contains("true"))
-                            System.out.println("Itinerary Reserved");
+                            Trace.info("MW reserveItinerary successful");
                         else
-                            System.out.println("Itinerary could not be reserved.");
+                            Trace.info("MW reserveItinerary");
                     }
                     catch(Exception e) {
-                        System.out.println("EXCEPTION: ");
-                        System.out.println(e.getMessage());
                         e.printStackTrace();
                     }
                     break;
@@ -567,6 +531,7 @@ public class Client {
                 case 21:  //quit the client
                     if (arguments.size() != 1) {
                         wrongNumber();
+                        toMW.println("END");
                         break;
                     }
                     System.out.println("Quitting client.");
@@ -587,6 +552,7 @@ public class Client {
 
                         boolean c = fromMW.readLine().contains("true");
                         System.out.println("new customer id: " + customer);
+                        Trace.info("MW newCustomerId successful");
                     }
                     catch(Exception e) {
                         System.out.println("EXCEPTION: ");

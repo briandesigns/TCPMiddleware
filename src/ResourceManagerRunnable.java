@@ -39,9 +39,259 @@ public class ResourceManagerRunnable implements Runnable, ResourceManager {
 
     @Override
     public void run() {
+        String line;
+        try {
+            try {
+                outerloop:
+                while (!(line = fromClient.readLine()).contains("END")) {
+                    String[] cmdWords = line.split(",");
+                    int choice = findChoice(cmdWords);
+                    Trace.info("command from middleware:" + line);
+                    Trace.info("number of tokens: " + cmdWords.length);
 
+                    boolean success;
+                    int value;
+                    String stringValue;
+                    switch (choice) {
+                        case 2:
+                            if (cmdWords.length < 4) {
+                                toClient.println("ERROR : wrong arguments");
+                                break;
+                            }
+                            success = addFlight(Integer.parseInt(cmdWords[1]), Integer.parseInt(cmdWords[2]), Integer.parseInt(cmdWords[3]), Integer.parseInt(cmdWords[4]));
+                            if (success) toClient.println("true");
+                            else toClient.println("false");
+                            break;
+                        case 3:
+                            if (cmdWords.length < 4) {
+                                toClient.println("ERROR : wrong arguments");
+                                break;
+                            }
+                            success = addCars(Integer.parseInt(cmdWords[1]), cmdWords[2], Integer.parseInt(cmdWords[3]), Integer.parseInt(cmdWords[4]));
+                            if (success) toClient.println("true");
+                            else toClient.println("false");
+                            break;
+                        case 4:
+                            if (cmdWords.length < 4) {
+                                toClient.println("ERROR : wrong arguments");
+                                break;
+                            }
+                            success = addRooms(Integer.parseInt(cmdWords[1]), cmdWords[2], Integer.parseInt(cmdWords[3]), Integer.parseInt(cmdWords[4]));
+                            if (success) toClient.println("true");
+                            else toClient.println("false");
+                            break;
+                        case 5:
+                            if (cmdWords.length < 1) {
+                                toClient.println("ERROR : wrong arguments");
+                                break;
+                            }
+                            value = newCustomer(Integer.parseInt(cmdWords[1]));
+                            toClient.println(value);
+                            break;
+                        case 6:
+                            if (cmdWords.length < 2) {
+                                toClient.println("ERROR : wrong arguments");
+                                break;
+                            }
+                            success = deleteFlight(Integer.parseInt(cmdWords[1]), Integer.parseInt(cmdWords[2]));
+                            if (success) toClient.println("true");
+                            else toClient.println("false");
+                            break;
+                        case 7:
+                            if (cmdWords.length < 2) {
+                                toClient.println("ERROR : wrong arguments");
+                                break;
+                            }
+                            success = deleteCars(Integer.parseInt(cmdWords[1]), cmdWords[2]);
+                            if (success) toClient.println("true");
+                            else toClient.println("false");
+                                                        break;
+                        case 8:
+                            if (cmdWords.length < 2) {
+                                toClient.println("ERROR : wrong arguments");
+                                break;
+                            }
+                            success = deleteRooms(Integer.parseInt(cmdWords[1]), cmdWords[2]);
+                            if (success) toClient.println("true");
+                            else toClient.println("false");
+                            break;
+                        case 9:
+                            if (cmdWords.length < 2) {
+                                toClient.println("ERROR : wrong arguments");
+                                break;
+                            }
+                            success = deleteCustomer(Integer.parseInt(cmdWords[1]), Integer.parseInt(cmdWords[2]));
+                            if (success) toClient.println("true");
+                            else toClient.println("false");
+                            break;
+                        case 10:
+                            if (cmdWords.length < 2) {
+                                toClient.println("ERROR : wrong arguments");
+                                break;
+                            }
+                            value = queryFlight(Integer.parseInt(cmdWords[1]), Integer.parseInt(cmdWords[2]));
+                            toClient.println(value);
+                            break;
+                        case 11:
+                            if (cmdWords.length < 2) {
+                                toClient.println("ERROR : wrong arguments");
+                                break;
+                            }
+                            value = queryCars(Integer.parseInt(cmdWords[1]), cmdWords[2]);
+                            toClient.println(value);
+                            break;
+                        case 12:
+                            if (cmdWords.length < 2) {
+                                toClient.println("ERROR : wrong arguments");
+                                break;
+                            }
+                            value = queryRooms(Integer.parseInt(cmdWords[1]), cmdWords[2]);
+                            toClient.println(value);
+                            break;
+                        case 13:
+                            if (cmdWords.length < 2) {
+                                toClient.println("ERROR : wrong arguments");
+                                break;
+                            }
+                            stringValue = queryCustomerInfo(Integer.parseInt(cmdWords[1]), Integer.parseInt(cmdWords[2]));
+                            toClient.println(stringValue);
+                            break;
+                        case 14:
+                            if (cmdWords.length < 2) {
+                                toClient.println("ERROR : wrong arguments");
+                                break;
+                            }
+                            value = queryFlight(Integer.parseInt(cmdWords[1]), Integer.parseInt(cmdWords[2]));
+                            toClient.println(value);
+                            break;
+                        case 15:
+                            if (cmdWords.length < 2) {
+                                toClient.println("ERROR : wrong arguments");
+                                break;
+                            }
+                            value = queryCarsPrice(Integer.parseInt(cmdWords[1]), cmdWords[2]);
+                            toClient.println(value);
+                            break;
+                        case 16:
+                            if (cmdWords.length < 2) {
+                                toClient.println("ERROR : wrong arguments");
+                                break;
+                            }
+                            value = queryRoomsPrice(Integer.parseInt(cmdWords[1]), cmdWords[2]);
+                            toClient.println(value);
+                            break;
+                        case 17:
+                            if (cmdWords.length < 3) {
+                                toClient.println("ERROR : wrong arguments");
+                                break;
+                            }
+                            success = reserveFlight(Integer.parseInt(cmdWords[1]), Integer.parseInt(cmdWords[2]), Integer.parseInt(cmdWords[3]));
+                            if (success) toClient.println("true");
+                            else toClient.println("false");
+                            break;
+                        case 18:
+                            if (cmdWords.length < 3) {
+                                toClient.println("ERROR : wrong arguments");
+                                break;
+                            }
+                            success = reserveCar(Integer.parseInt(cmdWords[1]), Integer.parseInt(cmdWords[2]), cmdWords[3]);
+                            if (success) toClient.println("true");
+                            else toClient.println("false");
+                            break;
+                        case 19:
+                            if (cmdWords.length < 3) {
+                                toClient.println("ERROR : wrong arguments");
+                                break;
+                            }
+                            success = reserveRoom(Integer.parseInt(cmdWords[1]), Integer.parseInt(cmdWords[2]), cmdWords[3]);
+                            if (success) toClient.println("true");
+                            else toClient.println("false");
+                            break;
+                        case 20:
 
+                        case -1:
+                            toClient.println("ERROR :  Command " + cmdWords[0] + " not supported");
+                            break;
+
+                        case 21:
+                            break outerloop;
+                        case 22:
+                            if (cmdWords.length < 2) {
+                                toClient.println("ERROR : wrong arguments");
+                                break;
+                            }
+                            success = newCustomerId(Integer.parseInt(cmdWords[1]), Integer.parseInt(cmdWords[2]));
+                            if (success) toClient.println("true");
+                            else toClient.println("false");
+                            break;
+                        default:
+                            toClient.println("ERROR :  Command " + cmdWords[0] + " not supported");
+                            break;
+                    }
+                }
+                Trace.info("a Middleware client thread disconnected");
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+
+        }catch (Exception e){
+            e.printStackTrace();
+        }
     }
+
+    private int findChoice(String[] cmdWords) {
+        int choice =-1;
+
+        if (cmdWords[0].compareToIgnoreCase("help") == 0)
+            choice = 1;
+        else if (cmdWords[0].compareToIgnoreCase("addflight") == 0)
+            choice =2;
+        else if (cmdWords[0].compareToIgnoreCase("addcars") == 0)
+            choice =3;
+        else if (cmdWords[0].compareToIgnoreCase("addrooms") == 0)
+            choice =4;
+        else if (cmdWords[0].compareToIgnoreCase("newcustomer") == 0)
+            choice =5;
+        else if (cmdWords[0].compareToIgnoreCase("deleteflight") == 0)
+            choice =6;
+        else if (cmdWords[0].compareToIgnoreCase("deletecars") == 0)
+            choice =7;
+        else if (cmdWords[0].compareToIgnoreCase("deleterooms") == 0)
+            choice=8;
+        else if (cmdWords[0].compareToIgnoreCase("deletecustomer") == 0)
+            choice=9;
+        else if (cmdWords[0].compareToIgnoreCase("queryflight") == 0)
+            choice=10;
+        else if (cmdWords[0].compareToIgnoreCase("querycars") == 0)
+            choice= 11;
+        else if (cmdWords[0].compareToIgnoreCase("queryrooms") == 0)
+            choice= 12;
+        else if (cmdWords[0].compareToIgnoreCase("querycustomerinfo") == 0)
+            choice= 13;
+        else if (cmdWords[0].compareToIgnoreCase("queryflightprice") == 0)
+            choice= 14;
+        else if (cmdWords[0].compareToIgnoreCase("querycarsprice") == 0)
+            choice= 15;
+        else if (cmdWords[0].compareToIgnoreCase("queryroomsprice") == 0)
+            choice= 16;
+        else if (cmdWords[0].compareToIgnoreCase("reserveflight") == 0)
+            choice= 17;
+        else if (cmdWords[0].compareToIgnoreCase("reservecar") == 0)
+            choice= 18;
+        else if (cmdWords[0].compareToIgnoreCase("reserveroom") == 0)
+            choice= 19;
+        else if (cmdWords[0].compareToIgnoreCase("reserveitinerary") == 0)
+            choice= 20;
+        else if (cmdWords[0].compareToIgnoreCase("END") == 0)
+            choice= 21;
+        else if (cmdWords[0].compareToIgnoreCase("newcustomerid") == 0)
+            choice=22;
+        else
+            choice=-1;
+        return choice;
+    }
+
+
     // Basic operations on RMItem //
 
     // Read a data item.
@@ -104,13 +354,13 @@ public class ResourceManagerRunnable implements Runnable, ResourceManager {
 
     // Query the price of an item.
     protected int queryPrice(int id, String key) {
-        Trace.info("RM::queryCarsPrice(" + id + ", " + key + ") called.");
+        Trace.info("RM::queryPrice(" + id + ", " + key + ") called.");
         ReservableItem curObj = (ReservableItem) readData(id, key);
         int value = 0;
         if (curObj != null) {
             value = curObj.getPrice();
         }
-        Trace.info("RM::queryCarsPrice(" + id + ", " + key + ") OK: $" + value);
+        Trace.info("RM::queryPrice(" + id + ", " + key + ") OK: $" + value);
         return value;
     }
 
@@ -251,7 +501,7 @@ public class ResourceManagerRunnable implements Runnable, ResourceManager {
                     + numCars + ", $" + carPrice + ") OK: "
                     + "cars = " + curObj.getCount() + ", price = $" + carPrice);
         }
-        return(true);
+        return true;
     }
 
     // Delete cars from a location.
@@ -300,7 +550,7 @@ public class ResourceManagerRunnable implements Runnable, ResourceManager {
                     + numRooms + ", $" + roomPrice + ") OK: "
                     + "rooms = " + curObj.getCount() + ", price = $" + roomPrice);
         }
-        return(true);
+        return true;
     }
 
     // Delete rooms from a location.
