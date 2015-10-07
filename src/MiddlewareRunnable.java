@@ -732,6 +732,8 @@ public class MiddlewareRunnable implements Runnable, ResourceManager {
                     + customerId + ") failed: customer doesn't exist.");
             return false;
         } else {
+
+            boolean reservableItemUpdated = true;
             // Increase the reserved numbers of all reservable items that
             // the customer reserved.
             RMHashtable reservationHT = cust.getReservations();
@@ -746,9 +748,12 @@ public class MiddlewareRunnable implements Runnable, ResourceManager {
                     try {
                         String line = fromFlight.readLine();
                         if (line.contains("true")) {
+
                             Trace.info("reserved item increased");
-                        } else
+                        } else {
                             Trace.info("reserved item count cannot be increased");
+                            reservableItemUpdated = false;
+                        }
                     } catch (IOException e1) {
                         e1.printStackTrace();
                     }
@@ -758,8 +763,11 @@ public class MiddlewareRunnable implements Runnable, ResourceManager {
                         String line = fromCar.readLine();
                         if (line.contains("true")) {
                             Trace.info("reserved item increased");
-                        } else
+                        } else {
                             Trace.info("reserved item count cannot be increased");
+                            reservableItemUpdated = false;
+
+                        }
                     } catch (IOException e1) {
                         e1.printStackTrace();
                     }
@@ -770,8 +778,11 @@ public class MiddlewareRunnable implements Runnable, ResourceManager {
                         String line = fromRoom.readLine();
                         if (line.contains("true")) {
                             Trace.info("reserved item increased");
-                        } else
+                        } else{
                             Trace.info("reserved item count cannot be increased");
+                            reservableItemUpdated = false;
+
+                        }
                     } catch (IOException e1) {
                         e1.printStackTrace();
                     }
@@ -780,10 +791,18 @@ public class MiddlewareRunnable implements Runnable, ResourceManager {
                     Trace.info("reserved item does not exist");
                 }
             }
+            if (reservableItemUpdated == true) {
+                removeData(id, cust.getKey());
+                Trace.info("RM::deleteCustomer(" + id + ", " + customerId + ") OK.");
+                return true;
+            }
+
+            Trace.info("RM::deleteCustomer(" + id + ", " + customerId + ") failed. one of the reservedItem could not be updated");
+            return false;
+
+
             // Remove the customer from the storage.
-            removeData(id, cust.getKey());
-            Trace.info("RM::deleteCustomer(" + id + ", " + customerId + ") OK.");
-            return true;
+
         }
     }
 
